@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
-let originalSignature = "...";
-let body = "...";
+const originalSignature = "...";
+const body = "...";
 
 const hash = crypto
   .createHmac("sha512", "my-secret")
@@ -30,7 +30,7 @@ if (validSignature == originalSignature) {
 
 // Should detect when storing the result into a variable.
 // ruleid: timing-attack-comparison
-var result = (validSignature === originalSignature);
+const result = (validSignature === originalSignature);
 
 // It is valid to use crypto.timingSafeEqual().
 // ok: timing-attack-comparison
