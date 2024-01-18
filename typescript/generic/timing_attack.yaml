@@ -1,0 +1,36 @@
+# Inspired by:
+# - https://github.com/eslint-community/eslint-plugin-security/blob/c73effd615b337448ca504926a21907fa089f4f4/rules/detect-possible-timing-attacks.js
+# - https://github.com/imfht/my-semgrep-rules/blob/133d415a12ce08cccb1a6ae7ba06315790da59e3/timing_attack_node.yaml
+rules:
+  - id: timing-attack-comparison
+    message: >
+      Comparing secrets using strings comparison operators is vulnerable to timing attacks.
+      Use crypto.timingSafeEqual(a, b) instead.
+    metadata:
+      cwe:
+        - 'CWE-208: Observable Timing Discrepancy'
+      category: security
+      references:
+        - https://snyk.io/blog/node-js-timing-attack-ccc-ctf/
+      technology:
+        - node.js
+      subcategory:
+        - audit
+      likelihood: LOW
+      impact: HIGH
+      # May raise a lot of false positives.
+      confidence: LOW
+    languages:
+      - ts
+      - js
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: $SECRET === $X
+          - pattern: $SECRET !== $X
+          - pattern: $SECRET == $X
+          - pattern: $SECRET != $X
+      - focus-metavariable: $SECRET
+      - metavariable-regex:
+          metavariable: $SECRET
+          regex: (?i).+(pass|secret|api|apiKey|auth|hash|sig|token).+
