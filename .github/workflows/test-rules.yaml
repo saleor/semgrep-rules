@@ -6,8 +6,6 @@ on:
 jobs:
   main:
     runs-on: ubuntu-22.04
-    container:
-      image: returntocorp/semgrep
 
     steps:
       - name: Checkout
