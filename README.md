@@ -17,3 +17,11 @@ Alternatively, all rules can be run:
 ```
 semgrep -c /path-to-the-clone-semgrep-rules .
 ```
+
+## Rules
+
+### Typescript
+
+| ID                                                                | Impact | Confidence | Description                                       |
+|-------------------------------------------------------------------|--------|------------|---------------------------------------------------|
+| [timing-attack-comparison](typescript/generic/timing_attack.yaml) | HIGH   | LOW        | Checks comparisons against secrets are time-safe. |

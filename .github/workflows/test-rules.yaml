@@ -1,0 +1,27 @@
+name: Test Semgrep Rules
+on:
+  push:
+  pull_request:
+
+jobs:
+  main:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Install Dependencies
+        run: python3 -m pip install semgrep
+
+      # Checks for syntax errors and runs 'p/semgrep-rule-lints'.
+      - name: Validate Rules
+        run: semgrep scan --validate --config ./
+
+      - name: Test Rules
+        run: semgrep --test ./
+
+      # This runs the rules from https://github.com/semgrep/semgrep-rules/tree/835867f89e4ba07f8bb4a6a1619507408e63e9b0/yaml/semgrep
+      # to ensure best practices are followed. The CI will only fail on error.
+      - name: Run Semgrep Rules Recommendation Checks
+        run: semgrep --config=r/yaml.semgrep --severity ERROR ./
