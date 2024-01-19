@@ -24,4 +24,10 @@ semgrep -c /path-to-the-clone-semgrep-rules .
 
 | ID                                                                | Impact | Confidence | Description                                       |
 |-------------------------------------------------------------------|--------|------------|---------------------------------------------------|
-| [timing-attack-comparison](typescript/generic/timing_attack.yaml) | HIGH   | LOW        | Checks comparisons against secrets are time-safe. |
+| [timing-attack-comparison](typescript/generic/timing_attack.yaml) | High   | Low        | Checks comparisons against secrets are time-safe. |
+
+### Python
+
+| ID                                                                     | Impact | Confidence | Description                                       |
+|------------------------------------------------------------------------|--------|------------|---------------------------------------------------|
+| [requests-disallow-redirects](python/requests/disallow-redirects.yaml) | High   | High       | Checks comparisons against secrets are time-safe. |

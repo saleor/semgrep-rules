@@ -1,0 +1,42 @@
+rules:
+  - id: requests-disallow-redirects
+    message: >
+      HTTP redirects should be avoided as they can lead to performance issues as
+      well potential SSRF, and DoS vulnerabilities.
+    languages:
+      - python
+    severity: WARNING
+    confidence: HIGH
+    likelihood: LOW
+    impact: HIGH
+    metadata:
+      category: best-practice
+      references:
+        - https://docs.python-requests.org/en/latest/api/?highlight=allow_redirects#requests.Session.request
+      technology:
+        - requests
+      license: BSD 3
+    pattern-either:
+      - patterns:
+          - pattern-not: requests.$W(..., allow_redirects=False, ...)
+          - pattern-either:
+              - pattern: requests.request(...)
+              - pattern: requests.get(...)
+              - pattern: requests.post(...)
+              - pattern: requests.put(...)
+              - pattern: requests.delete(...)
+              - pattern: requests.head(...)
+              - pattern: requests.patch(...)
+      - patterns:
+          - pattern-inside: |
+              $SESSION = requests.Session(...)
+              ...
+          - pattern-not: |
+              $SESSION.$W(..., allow_redirects=False, ...)
+          - pattern-either:
+              - pattern: $SESSION.get(...)
+              - pattern: $SESSION.post(...)
+              - pattern: $SESSION.put(...)
+              - pattern: $SESSION.delete(...)
+              - pattern: $SESSION.head(...)
+              - pattern: $SESSION.patch(...)
