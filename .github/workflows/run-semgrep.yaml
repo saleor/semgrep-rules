@@ -1,0 +1,15 @@
+name: Semgrep Scanner
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+permissions:
+  contents: read
+jobs:
+  scanner:
+    uses: ./.github/workflows/action-run-semgrep.yaml
+    secrets:
+      SARIF_TO_GH_COMMENT_APP_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_ID }}
+      SARIF_TO_GH_COMMENT_APP_INSTALL_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_INSTALL_ID }}
+      SARIF_TO_GH_COMMENT_APP_KEY: ${{ secrets.SARIF_TO_GH_COMMENT_APP_KEY }}

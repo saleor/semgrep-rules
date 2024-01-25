@@ -1,0 +1,37 @@
+jobs:
+  scan:
+    steps:
+        - name: Run named step
+          # ruleid: shell-script-injection
+          run: echo ${{ env.var }}
+
+        # ruleid: shell-script-injection
+        - run: echo ${{ env.var }}
+
+        # ruleid: shell-script-injection
+        - run: |
+            echo multiline
+            echo ${{ env.var }}
+
+        # ruleid: shell-script-injection
+        - run: |
+            var=${{ env.var }}
+
+        # ok: shell-script-injection
+        - env:
+            VAR: ${{ env.var }}
+          run: echo "$var"
+---
+name: Test Composite Action
+inputs: {}
+runs:
+  using: "composite"
+  steps:
+    # ruleid: shell-script-injection
+    - run: |
+        var=${{ env.var }}
+
+    # ok: shell-script-injection
+    - env:
+        VAR: ${{ env.var }}
+      run: echo "$var"

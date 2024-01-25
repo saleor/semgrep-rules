@@ -1,0 +1,216 @@
+name: Semgrep CI
+on:
+  workflow_call:
+    secrets:
+      SARIF_TO_GH_COMMENT_APP_ID:
+        required: true
+        description: >
+          The ID of the GitHub application that exports SARIF results as pull request
+          annotations.
+      SARIF_TO_GH_COMMENT_APP_INSTALL_ID:
+        required: true
+        description: >
+          The repository or organization's installation ID of the GitHub application
+          exporting SARIF results as pull request annotations.
+      SARIF_TO_GH_COMMENT_APP_KEY:
+        required: true
+        description: >
+          The private key of the GitHub application exporting SARIF results
+          as pull request annotations.
+    inputs:
+      check_name:
+        type: string
+        default: ""
+        description: |
+          The name of the check, defaults the tool name from the SARIF file
+          (usually "Semgrep OSS").
+          `check_name` should be set to a different name if there are multiple
+          Semgrep workflows running inside a same pull request.
+
+      # Note: anchors are not supported by GH workflows thus we need to copy-paste
+      # the inputs.
+      # See: https://github.com/actions/runner/issues/1182
+      use_gitignore:
+        type: boolean
+        default: true
+        description: |
+          Whether to respect the .gitignore file or not. If set to 'false', then
+          only the '.semgrepignore' file will be used.
+          See: https://semgrep.dev/docs/ignoring-files-folders-code/.
+
+      configs:
+        required: false
+        type: string
+        description: |
+          Whitespace or newline separated semgrep YAML configuration paths or URLs, e.g.:
+          - auto
+          - p/python (public library)
+          - ./rules/my-rule.yaml (single YAML file)
+          - ./my-rules/ (directory of N YAML files)
+          
+          By default the rules will be added on top of this workflow's default rules
+          (see the input `use_default_config` and the environment variable
+          `DEFAULT_CONFIG` for more information).
+
+      use_default_config:
+        type: boolean
+        default: true
+        description: |
+          If 'false' then only the rules defined in `inputs.configs` will be ran
+          instead of both `inputs.configs` and `DEFAULT_CONFIG`.
+
+      exclude_rules:
+        required: false
+        type: string
+        description: Rule IDs to skip.
+
+      use_default_exclude_rules:
+        type: boolean
+        default: true
+        description: |
+          If 'false' then only the rule IDs defined in `inputs.exclude_rules` will be
+          excluded instead of also excluding the contents from `DEFAULT_EXCLUDE_RULE_IDS`.
+
+env:
+  SARIF_OUTPUT_FILE: semgrep-results.sarif
+  SARIF_ARTIFACT_NAME: Semgrep OSS SARIF Results
+  # The semgrep rules to run unless `inputs.use_default_config == false`.
+  DEFAULT_CONFIG: |
+    auto
+    p/ci
+    r/yaml.github-actions
+    ./saleor-rules
+  # yaml.github-actions.[...].run-shell-injection is duplicate of saleor-rules.yaml.github-actions.script-injection
+  DEFAULT_EXCLUDE_RULE_IDS: |
+    yaml.github-actions.security.run-shell-injection.run-shell-injection
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    if: (github.actor != 'dependabot[bot]')
+    name: semgrep/ci
+    runs-on: ubuntu-22.04
+    container:
+      # Note: the non-root flavor doesn't work on GHA (e.g., 1.57.0-nonroot).
+      image: returntocorp/semgrep@sha256:259562bd67f81edb4600090a960910b2a21e1e0e95cc13ad0d8dc172193039cf # 1.56.0
+
+    steps:
+      # Clone the invoker's repository.
+      - if: ${{ !env.ACT }}
+        name: Checkout Caller's Code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      # Clone the custom semgrep rules (this GitHub repository).
+      - if: ${{ !env.ACT }}
+        name: Checkout Custom Semgrep Rules
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          # Unfortunately we cannot detect the GitHub repository, and git ref of
+          # the invoked workflow (this file) in pull requests due to not having access
+          # to id_token permission thus the Git repository needs to be hard-coded
+          # and always use `main` branch.
+          # Feature request: https://github.com/orgs/community/discussions/31054
+          repository: saleor/semgrep-rules
+          ref: main
+          # Note: the directory name will be used for rule IDs
+          # (e.g., saleor-rules.typescript.my-check).
+          # Thus avoid changing the path and ensure the name is meaningful.
+          path: ./saleor-rules
+          set-safe-directory: false
+
+      - name: Run Semgrep Rules
+        shell: bash
+        env:
+          TARGETS: ${{ inputs.targets }}
+          USE_GITIGNORE: ${{ inputs.use_gitignore }}
+          CONFIG_PATHS: ${{ inputs.configs }}
+          USE_DEFAULT_CONFIG: ${{ inputs.use_default_config }}
+          USE_DEFAULT_EXCLUDE_RULES: ${{ inputs.use_default_exclude_rules }}
+          EXCLUDE_RULES: ${{ inputs.exclude_rules }}
+        run: |
+          set -u -o pipefail
+          
+          cmd_args=(
+              # Do not check for version update as we are inside a CI.
+              "--disable-version-check"
+              # Save the results into a SARIF file to add them as PR annotations.
+              "--output=$SARIF_OUTPUT_FILE"
+              "--sarif"
+          )
+          
+          # Add extra logging if the runner was run with debug logging.
+          test -z "${RUNNER_DEBUG+x}" || cmd_args+=( "--verbose" )
+          test "$USE_GITIGNORE" == true || cmd_args+=( "--no-git-ignore" )
+          
+          if [ "$USE_DEFAULT_CONFIG" == true ]; then
+            CONFIG_PATHS="$DEFAULT_CONFIG $CONFIG_PATHS"
+          fi
+          
+          if [ "$USE_DEFAULT_EXCLUDE_RULES" == true ]; then
+            EXCLUDE_RULES="$DEFAULT_EXCLUDE_RULE_IDS $EXCLUDE_RULES"
+          fi
+          
+          # Gather the config input whitespace-separate value
+          # into a list of `--config=<value>` arguments.
+          read -d '' -r -a configs < <(echo "$CONFIG_PATHS") || true
+          for cfg in "${configs[@]}"; do
+            cmd_args+=( "--config=$cfg" )
+          done
+          
+          # Gather the excluded rules ID into a list
+          # of `--exclude-rule=<value>` arguments.
+          read -d '' -r -a exclude_rules < <(echo "$EXCLUDE_RULES") || true
+          for excluded_rule_id in "${exclude_rules[@]}"; do
+            cmd_args+=( "--exclude-rule=$excluded_rule_id" )
+          done
+          
+          semgrep ci "${cmd_args[@]}"
+
+      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
+        name: Export SARIF Results
+        # Always export the SARIF results file (if it exists) as semgrep
+        # checks will fail on blocking errors, but we still want to display them
+        # as PR annotations.
+        if: ${{ always() }}
+        with:
+          name: ${{ env.SARIF_ARTIFACT_NAME }}
+          path: ${{ env.SARIF_OUTPUT_FILE }}
+          if-no-files-found: error
+          retention-days: 1
+
+  report:
+    if: always() && (github.actor != 'dependabot[bot]')
+    needs:
+      - scan
+    name: SARIF to PR Annotations
+    runs-on: ubuntu-22.04
+    container:
+      # Note: distroless flavor doesn't work on GHA.
+      image: ghcr.io/nyankiyoshi/less-advanced-security@sha256:689f73bed448ce40ca4ed01f6585f22665c0c302ed0e882d1fc78016c12f2880 # 0.5.0
+
+    steps:
+      - name: Download SARIF Results
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          name: ${{ env.SARIF_ARTIFACT_NAME }}
+          path: results
+
+      - name: Export
+        env:
+          APP_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_ID }}
+          APP_INSTALL_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_INSTALL_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          APP_KEY: ${{ secrets.SARIF_TO_GH_COMMENT_APP_KEY }}
+          CHECK_NAME: ${{ inputs.check_name }}
+        run: |
+          less-advanced-security \
+            --app_id "$APP_ID" \
+            --install_id "$APP_INSTALL_ID" \
+            --sarif_path results/"$SARIF_OUTPUT_FILE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pr "$PR_NUMBER" \
+            --sha "$HEAD_SHA" \
+            --check_name "$CHECK_NAME"
