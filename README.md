@@ -30,9 +30,9 @@ semgrep -c /path-to-the-clone-semgrep-rules .
 
 ### Typescript
 
-| ID                                                                            | Impact | Confidence | Description                                       |
-|-------------------------------------------------------------------------------|--------|------------|---------------------------------------------------|
-| [timing-attack-comparison](typescript/lang/security/audit/timing_attack.yaml) | HIGH   | LOW        | Checks comparisons against secrets are time-safe. |
+| ID                                                                                       | Impact | Confidence | Description                                       |
+|------------------------------------------------------------------------------------------|--------|------------|---------------------------------------------------|
+| [timing-attack-comparison](typescript/lang/security/audit/timing-attack-comparison.yaml) | HIGH   | LOW        | Checks comparisons against secrets are time-safe. |
 
 
 ## Contributing
