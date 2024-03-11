@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-22.04
     container:
       # Note: the non-root flavor doesn't work on GHA (e.g., 1.57.0-nonroot).
-      image: returntocorp/semgrep@sha256:259562bd67f81edb4600090a960910b2a21e1e0e95cc13ad0d8dc172193039cf # 1.56.0
+      image: returntocorp/semgrep@sha256:396f4ad7a655289e764ab2f92733e6195c166ff2f042e0d40505a5850432b9ac # 1.63.0
 
     steps:
       # Clone the invoker's repository.
