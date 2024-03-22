@@ -30,10 +30,15 @@ semgrep -c /path-to-the-clone-semgrep-rules .
 
 ### Typescript
 
-| ID                                                                                       | Impact | Confidence | Description                                       |
-|------------------------------------------------------------------------------------------|--------|------------|---------------------------------------------------|
-| [timing-attack-comparison](typescript/lang/security/audit/timing-attack-comparison.yaml) | HIGH   | LOW        | Checks comparisons against secrets are time-safe. |
+| ID                                                                                                                      | Impact | Confidence | Description                                       |
+|-------------------------------------------------------------------------------------------------------------------------|--------|------------|---------------------------------------------------|
+| [typescript.lang.security.audit.timing-attack-comparison](typescript/lang/security/audit/timing-attack-comparison.yaml) | HIGH   | LOW        | Checks comparisons against secrets are time-safe. |
 
+### YAML
+
+| ID                                                                                                                          | Impact | Confidence | Description                                                                                        |
+|-----------------------------------------------------------------------------------------------------------------------------|--------|------------|----------------------------------------------------------------------------------------------------|
+| [yaml.github-actions.security.audit.shell-script-injection](yaml/github-actions/security/audit/shell-script-injection.yaml) | HIGH   | HIGH       | Ensures no string interpolations (`${{ ... }}`) are present inside `run` blocks of GitHub Actions. |
 
 ## Contributing
 
