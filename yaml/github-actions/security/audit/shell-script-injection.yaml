@@ -1,4 +1,4 @@
-# This is strict check that ensures no string interpolation are being done
+# This is a strict check that ensures no string interpolation are being done
 # inside `run: ...` blocks of GitHub Workflows and Composite Actions.
 #
 # This rule, in contrast to https://registry.semgrep.dev/rule/yaml.github-actions.security.run-shell-injection,
@@ -6,8 +6,9 @@
 # is safe and instead enforces to not use string interpolations inside shell scripts.
 rules:
 - id: shell-script-injection
-  message: >
-    Potential script injection, through string interpolation use an intermediate environment variable instead of ${{ ... }}.
+  message: >-
+    Potential script injection through string interpolation,
+    use an intermediate environment variable instead of ${{ ... }}.
   severity: ERROR
   languages:
     - yaml

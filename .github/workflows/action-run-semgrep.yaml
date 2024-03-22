@@ -27,17 +27,6 @@ on:
           `check_name` should be set to a different name if there are multiple
           Semgrep workflows running inside a same pull request.
 
-      # Note: anchors are not supported by GH workflows thus we need to copy-paste
-      # the inputs.
-      # See: https://github.com/actions/runner/issues/1182
-      use_gitignore:
-        type: boolean
-        default: true
-        description: |
-          Whether to respect the .gitignore file or not. If set to 'false', then
-          only the '.semgrepignore' file will be used.
-          See: https://semgrep.dev/docs/ignoring-files-folders-code/.
-
       configs:
         required: false
         type: string
@@ -124,7 +113,6 @@ jobs:
         shell: bash
         env:
           TARGETS: ${{ inputs.targets }}
-          USE_GITIGNORE: ${{ inputs.use_gitignore }}
           CONFIG_PATHS: ${{ inputs.configs }}
           USE_DEFAULT_CONFIG: ${{ inputs.use_default_config }}
           USE_DEFAULT_EXCLUDE_RULES: ${{ inputs.use_default_exclude_rules }}
@@ -138,11 +126,14 @@ jobs:
               # Save the results into a SARIF file to add them as PR annotations.
               "--output=$SARIF_OUTPUT_FILE"
               "--sarif"
+              # Disable .gitignore in favor of using .semgrepignore to prevent
+              # 'git add --force' from being silently ignored, thus forcing
+              # the users to be explicit.
+              "--no-git-ignore"
           )
           
           # Add extra logging if the runner was run with debug logging.
           test -z "${RUNNER_DEBUG+x}" || cmd_args+=( "--verbose" )
-          test "$USE_GITIGNORE" == true || cmd_args+=( "--no-git-ignore" )
           
           if [ "$USE_DEFAULT_CONFIG" == true ]; then
             CONFIG_PATHS="$DEFAULT_CONFIG $CONFIG_PATHS"
