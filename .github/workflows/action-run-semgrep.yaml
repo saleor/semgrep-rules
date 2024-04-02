@@ -25,7 +25,7 @@ on:
           The name of the check, defaults the tool name from the SARIF file
           (usually "Semgrep OSS").
           `check_name` should be set to a different name if there are multiple
-          Semgrep workflows running inside a same pull request.
+          Semgrep workflows running inside the same pull request.
 
       configs:
         required: false
