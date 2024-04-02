@@ -1,0 +1,39 @@
+# This is a strict check that ensures no string interpolation are being done
+# inside `run: ...` blocks of GitHub Workflows and Composite Actions.
+#
+# This rule, in contrast to https://registry.semgrep.dev/rule/yaml.github-actions.security.run-shell-injection,
+# doesn't take the assumption that anything that isn't coming from `github.event`
+# is safe and instead enforces to not use string interpolations inside shell scripts.
+rules:
+- id: shell-script-injection
+  message: >-
+    Potential script injection through string interpolation,
+    use an intermediate environment variable instead of ${{ ... }}.
+  severity: ERROR
+  languages:
+    - yaml
+  metadata:
+    cwe:
+      - "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    category: security
+    subcategory:
+      - audit
+    references:
+      - https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+    technology:
+      - github-actions
+    likelihood: MEDIUM
+    confidence: HIGH
+    impact: HIGH
+  patterns:
+    - pattern-inside: |
+        steps: [...]
+    - pattern-inside: |
+        run: ...
+        ...
+    - pattern: |
+        run: $X
+    - metavariable-pattern:
+        language: generic
+        metavariable: $X
+        pattern: "${{ ... }}"

@@ -1,0 +1,4 @@
+:include .semgrepignore_defaults
+
+# Ignore Semgrep test files of our Semgrep rules.
+*.test.*
