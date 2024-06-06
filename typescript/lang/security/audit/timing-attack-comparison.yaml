@@ -33,4 +33,4 @@ rules:
       - focus-metavariable: $SECRET
       - metavariable-regex:
           metavariable: $SECRET
-          regex: (?i).+(password|secret|apiKey|auth|hash|sig|token).+
+          regex: (?i).+(password|secret|apiKey|hash|sig|token).+
