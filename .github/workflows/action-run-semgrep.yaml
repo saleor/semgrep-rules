@@ -36,7 +36,7 @@ on:
           - p/python (public library)
           - ./rules/my-rule.yaml (single YAML file)
           - ./my-rules/ (directory of N YAML files)
-          
+
           By default the rules will be added on top of this workflow's default rules
           (see the input `use_default_config` and the environment variable
           `DEFAULT_CONFIG` for more information).
@@ -119,7 +119,7 @@ jobs:
           EXCLUDE_RULES: ${{ inputs.exclude_rules }}
         run: |
           set -u -o pipefail
-          
+
           cmd_args=(
               # Do not check for version update as we are inside a CI.
               "--disable-version-check"
@@ -131,32 +131,32 @@ jobs:
               # the users to be explicit.
               "--no-git-ignore"
           )
-          
+
           # Add extra logging if the runner was run with debug logging.
           test -z "${RUNNER_DEBUG+x}" || cmd_args+=( "--verbose" )
-          
+
           if [ "$USE_DEFAULT_CONFIG" == true ]; then
             CONFIG_PATHS="$DEFAULT_CONFIG $CONFIG_PATHS"
           fi
-          
+
           if [ "$USE_DEFAULT_EXCLUDE_RULES" == true ]; then
             EXCLUDE_RULES="$DEFAULT_EXCLUDE_RULE_IDS $EXCLUDE_RULES"
           fi
-          
+
           # Gather the config input whitespace-separate value
           # into a list of `--config=<value>` arguments.
           read -d '' -r -a configs < <(echo "$CONFIG_PATHS") || true
           for cfg in "${configs[@]}"; do
             cmd_args+=( "--config=$cfg" )
           done
-          
+
           # Gather the excluded rules ID into a list
           # of `--exclude-rule=<value>` arguments.
           read -d '' -r -a exclude_rules < <(echo "$EXCLUDE_RULES") || true
           for excluded_rule_id in "${exclude_rules[@]}"; do
             cmd_args+=( "--exclude-rule=$excluded_rule_id" )
           done
-          
+
           semgrep ci "${cmd_args[@]}"
 
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
@@ -180,6 +180,8 @@ jobs:
     container:
       # Note: distroless flavor doesn't work on GHA.
       image: ghcr.io/nyankiyoshi/less-advanced-security@sha256:689f73bed448ce40ca4ed01f6585f22665c0c302ed0e882d1fc78016c12f2880 # 0.5.0
+
+    environment: sarif-exporter
 
     steps:
       - name: Download SARIF Results
