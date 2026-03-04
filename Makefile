@@ -17,14 +17,14 @@ all: validate test checks
 # Check rules are valid
 validate:
 	$(semgrep_container) \
-			--validate \
-			$(configs)
+		--validate \
+		$(configs)
 
 # Run test files
 test:
 	$(semgrep_container) \
-			--test \
-			./
+		--test \
+		./
 
 # Run official recommendation checks
 checks:
