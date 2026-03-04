@@ -1,14 +1,12 @@
 name: Test Semgrep Rules
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   main:
     runs-on: ubuntu-24.04
-
-    # Note: the non-root flavor doesn't work on GHA (e.g., 1.56.0-nonroot).
-    container: returntocorp/semgrep:1.153.1@sha256:50b839b576d76426efd3e5cffda2db0d8c403f53aa76e91d42ccf51485ac336c
 
     steps:
       - name: Checkout
