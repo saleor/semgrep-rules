@@ -68,7 +68,8 @@ env:
     auto
     p/ci
     r/yaml.github-actions
-    ./saleor-rules
+    ./saleor-rules/yaml
+    ./saleor-rules/typescript
   # yaml.github-actions.[...].run-shell-injection is duplicate of saleor-rules.yaml.github-actions.script-injection
   DEFAULT_EXCLUDE_RULE_IDS: |
     yaml.github-actions.security.run-shell-injection.run-shell-injection
