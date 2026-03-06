@@ -4,16 +4,11 @@ on:
     types:
       - synchronize
       - opened
+
+permissions: {}
+
 jobs:
   scanner:
     permissions:
       contents: read
     uses: ./.github/workflows/action-run-semgrep.yaml
-    with:
-      sarif-export-environment: semgrep-export-sarif
-    # Required to work with environment currently
-    # Refs:
-    # - https://github.com/github/roadmap/issues/636
-    # - https://github.com/actions/runner/issues/1490
-    # - https://github.com/actions/runner/issues/3206
-    secrets: inherit
