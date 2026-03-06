@@ -63,7 +63,6 @@ permissions:
 
 jobs:
   scan:
-    if: (github.actor != 'dependabot[bot]')
     name: semgrep/ci
     runs-on: ubuntu-24.04
     container:
@@ -144,51 +143,21 @@ jobs:
 
           semgrep ci "${cmd_args[@]}"
 
-      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
+      - uses: saleor/sarif-to-annotations@feat/add-action
         name: Export SARIF Results
         # Always export the SARIF results file (if it exists) as semgrep
         # checks will fail on blocking errors, but we still want to display them
         # as PR annotations.
         if: ${{ always() }}
         with:
+          path: ${{ env.SARIF_OUTPUT_FILE }}
+
+      # Allow to download the results for local analysis
+      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
+        name: Export SARIF Results
+        if: ${{ always() }}
+        with:
           name: ${{ env.SARIF_ARTIFACT_NAME }}
           path: ${{ env.SARIF_OUTPUT_FILE }}
           if-no-files-found: error
           retention-days: 1
-
-  report:
-    if: always() && (github.actor != 'dependabot[bot]')
-    needs:
-      - scan
-    name: SARIF to PR Annotations
-    runs-on: ubuntu-24.04
-    container:
-      # Note: distroless flavor doesn't work on GHA.
-      image: ghcr.io/nyankiyoshi/less-advanced-security@sha256:689f73bed448ce40ca4ed01f6585f22665c0c302ed0e882d1fc78016c12f2880 # 0.5.0
-
-    environment: sarif-exporter
-
-    steps:
-      - name: Download SARIF Results
-        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
-        with:
-          name: ${{ env.SARIF_ARTIFACT_NAME }}
-          path: results
-
-      - name: Export
-        env:
-          APP_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_ID }}
-          APP_INSTALL_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_INSTALL_ID }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          APP_KEY: ${{ secrets.SARIF_TO_GH_COMMENT_APP_KEY }}
-          CHECK_NAME: ${{ inputs.check_name }}
-        run: |
-          less-advanced-security \
-            --app_id "$APP_ID" \
-            --install_id "$APP_INSTALL_ID" \
-            --sarif_path results/"$SARIF_OUTPUT_FILE" \
-            --repo "$GITHUB_REPOSITORY" \
-            --pr "$PR_NUMBER" \
-            --sha "$HEAD_SHA" \
-            --check_name "$CHECK_NAME"
