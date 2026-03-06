@@ -150,7 +150,7 @@ jobs:
         # as PR annotations.
         if: ${{ always() }}
         with:
-          path: ${{ env.SARIF_OUTPUT_FILE }}
+          sarif-file: ${{ env.SARIF_OUTPUT_FILE }}
 
       # Allow to download the results for local analysis
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
