@@ -1,0 +1,6 @@
+jobs:
+  scan:
+    steps:
+      - name: Run named step
+        # ruleid: shell-script-injection
+        run: echo ${{ env.var }}
