@@ -1,38 +1,31 @@
 name: Test Semgrep Rules
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions: {}
 
 jobs:
   main:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
-    # Note: the non-root flavor doesn't work on GHA (e.g., 1.56.0-nonroot).
-    container: returntocorp/semgrep@sha256:396f4ad7a655289e764ab2f92733e6195c166ff2f042e0d40505a5850432b9ac # 1.63.0
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Checks for syntax errors and runs 'p/semgrep-rule-lints'.
       - name: Validate Rules
         shell: bash
-        run: |
-          config_args=()
-
-          # As of semgrep 1.58.0, hidden directories are no longer excluded
-          # when passing "--validate ./" thus we need to manually exclude hidden
-          # directories.
-          while IFS= read -r -d '' dir; do
-            config_args+=( "--config=$dir" )
-          done < <(find . -maxdepth 1 -mindepth 1 -type d -not -path '*/\.*' -print0)
-          
-          semgrep scan --validate "${config_args[@]}"
+        run: make validate
 
       - name: Test Rules
-        run: semgrep --test ./
+        run: make test
 
       # This runs the rules from https://github.com/semgrep/semgrep-rules/tree/835867f89e4ba07f8bb4a6a1619507408e63e9b0/yaml/semgrep
       # to ensure best practices are followed. The CI will only fail on error.
       - name: Run Semgrep Rules Recommendation Checks
-        run: semgrep --config=r/yaml.semgrep --severity ERROR ./
+        run: make checks
