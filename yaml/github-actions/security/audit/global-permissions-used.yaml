@@ -1,9 +1,6 @@
 rules:
   - id: global-permissions-used
     message: |
-      Permissions should be set at the job-level rather than globally.
-      Move `permissions` block inside the `job` property instead.
-
       Global permissions apply to every job in the workflow, which can grant unnecessary
       privileges to jobs that do not require them.
 
