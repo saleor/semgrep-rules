@@ -1,0 +1,66 @@
+rules:
+  - id: dangerous-event-type
+    message: >-
+      This workflow is triggered by the $X event, which **can be initiated by
+      external or untrusted actors**. This can allow unauthorized parties
+      with repository privileges and can lead to being able to access secrets
+      or perform write operations.
+
+      An attacker may be able to craft repository activity (for example comments,
+      pull requests, or discussions) that causes the workflow to execute malicious
+      code (such as exfiltrating secrets, the GITHUB_TOKEN, or even move laterally)
+
+      To reduce risk:
+      - Avoid triggering privileged workflows from externally controllable events,
+        such as $X
+      - Restrict permissions using the `permissions` field.
+      - Avoid using secrets in workflows triggered by untrusted input
+      - Use safer events such as `push` or `pull_request`
+      - Avoid using GitHub caches in sensitive or privileged workflows
+
+      Reference:
+      https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions
+    severity: ERROR
+    languages:
+      - yaml
+    metadata:
+      cwe:
+        - "CWE-913: Improper Control of Dynamically-Managed Code Resources"
+      category: security
+      subcategory:
+        - audit
+      technology:
+        - github-actions
+      likelihood: MEDIUM
+      # Low confidence due to matching private repositories and in general exploitability
+      # really depends on the context for this rule.
+      confidence: LOW
+      impact: HIGH
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              on: [..., $X, ...]
+          - pattern-inside: |
+              on:
+                ...
+                $X: ...
+                ...
+          - pattern-inside: |
+              on: $X
+      - focus-metavariable: $X
+      - metavariable-regex:
+          metavariable: $X
+          # List: https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
+          regex: "(?i).*(\
+            pull_request_target|\
+            check_run|\
+            check_suite|\
+            discussion|\
+            discussion_comment|\
+            fork|\
+            issue_comment|\
+            issues|\
+            pull_request_comment|\
+            pull_request_review|\
+            pull_request_review_comment|\
+            watch).*"
