@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# Should match when using global permissions
+permissions:
+  # ruleid: global-permissions-used
+  contents: read
+  id-token: write # Required for OIDC
+  releases: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# Should also match when using a string instead of an object
+# ruleid: global-permissions-used
+permissions: read-all
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # ok: global-permissions-used
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
+      releases: read
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# ok: global-permissions-used
+permissions: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # ok: global-permissions-used
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
+      releases: read
+    steps:
+      - run: echo hello

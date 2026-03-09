@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# Should match when using global permissions
+# ok: oidc-id-token-without-environment
+permissions:
+  contents: read
+  id-token: write # Required for OIDC
+  releases: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: foo
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    # Should match when using job-level permissions
+    # ruleid: oidc-id-token-without-environment
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
+      releases: read
+
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# Test surrounded by other jobs
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ true }}
+        name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+  deploy:
+    runs-on: ubuntu-latest
+    # ruleid: oidc-id-token-without-environment
+    permissions:
+      id-token: write
+    steps:
+      - name: do something
+        run: |
+          echo "$foo"
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ true }}
+        name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# Testing default permissions set globally
+# ok: oidc-id-token-without-environment
+permissions: {}
+
+jobs:
+  deploy:
+    # ruleid: oidc-id-token-without-environment
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # Re-usable workflows shouldn't match as we can't put a 'environment' key
+  # However, the actual reusable workflow MUST still define one (and this
+  # semgrep rule will catch the issue in the reusable workflow if it's from
+  # Saleor)
+  reusable-workflow:
+    # ok: oidc-id-token-without-environment
+    permissions:
+      id-token: write
+    uses: saleor/foo
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+# Should still not match when permissions are global and it's using
+# a reusable workflow
+# ok: oidc-id-token-without-environment
+permissions:
+  id-token: write
+
+jobs:
+  reusable-workflow:
+    uses: saleor/foo
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    # Should still match even if an **unrelated** job uses an
+    # environment.
+    environment: ok
+    steps:
+      - run: xxx
+  deploy:
+    # ruleid: oidc-id-token-without-environment
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
+      releases: read
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    # Shouldn't match when using an environment
+    # ok: oidc-id-token-without-environment
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
+      releases: read
+    environment: ok
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
