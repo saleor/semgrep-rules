@@ -4,8 +4,8 @@ on:
     types:
       - synchronize
       - opened
-permissions:
-  contents: read
 jobs:
   scanner:
+    permissions:
+      contents: read
     uses: ./.github/workflows/action-run-semgrep.yaml

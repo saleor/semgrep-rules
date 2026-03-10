@@ -1,0 +1,34 @@
+rules:
+  - id: global-permissions-used
+    message: |
+      Global permissions apply to every job in the workflow, which can grant unnecessary
+      privileges to jobs that do not require them.
+
+      Instead, define `permissions` at the job level so each job only receives the
+      minimum privileges it requires. This follows the principle of least privilege
+      and reduces the blast radius if a job is compromised.
+
+      Note: Setting `permissions: {}` globally to disable all permissions is acceptable.
+    severity: ERROR
+    languages: [yaml]
+    metadata:
+      category: security
+      technology: github-actions
+      cwe: "CWE-250: Execution with Unnecessary Privileges"
+      likelihood: MEDIUM
+      confidence: HIGH
+      impact: HIGH
+
+    patterns:
+      - pattern-inside: |
+          permissions: $X
+          ...
+          jobs:
+            ...
+      # Allow denying all permissions globally
+      - pattern-not: |
+          permissions: {}
+          ...
+          jobs:
+            ...
+      - focus-metavariable: $X

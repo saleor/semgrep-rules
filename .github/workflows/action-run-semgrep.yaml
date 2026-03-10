@@ -2,6 +2,11 @@ name: Semgrep CI
 on:
   workflow_call:
     inputs:
+      sarif-export-environment:
+        type: string
+        required: true
+        description: The GitHub environment to use to exports results.
+
       check_name:
         type: string
         default: ""
@@ -58,13 +63,16 @@ env:
   DEFAULT_EXCLUDE_RULE_IDS: |
     yaml.github-actions.security.run-shell-injection.run-shell-injection
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   scan:
     name: semgrep/ci
     runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+
     container:
       # Note: the non-root flavor doesn't work on GHA (e.g., 1.57.0-nonroot).
       image: returntocorp/semgrep:1.153.1@sha256:50b839b576d76426efd3e5cffda2db0d8c403f53aa76e91d42ccf51485ac336c
@@ -74,6 +82,9 @@ jobs:
       - if: ${{ !env.ACT }}
         name: Checkout Caller's Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Semgrep expects the head instead of the merge commit
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Clone the custom semgrep rules (this GitHub repository).
       - if: ${{ !env.ACT }}
@@ -114,6 +125,9 @@ jobs:
               # 'git add --force' from being silently ignored, thus forcing
               # the users to be explicit.
               "--no-git-ignore"
+              # Prevents Semgrep from scanning the repo 'saleor/semgrep-rules' as it
+              # can cause unrelated findings
+              "--exclude=./saleor-rules/"
           )
 
           # Add extra logging if the runner was run with debug logging.
@@ -141,6 +155,7 @@ jobs:
             cmd_args+=( "--exclude-rule=$excluded_rule_id" )
           done
 
+          echo "Running semgrep with: ${cmd_args[*]}"
           semgrep ci "${cmd_args[@]}"
 
       - uses: saleor/sarif-to-annotations@feat/add-action
