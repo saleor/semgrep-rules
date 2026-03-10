@@ -2,11 +2,6 @@ name: Semgrep CI
 on:
   workflow_call:
     inputs:
-      sarif-export-environment:
-        type: string
-        required: true
-        description: The GitHub environment to use to exports results.
-
       check_name:
         type: string
         default: ""
