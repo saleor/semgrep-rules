@@ -1,0 +1,36 @@
+on:
+  # ruleid: dangerous-event-type
+  pull_request_target:
+---
+on:
+  push:
+  # Should match even when surrounded
+  # ruleid: dangerous-event-type
+  pull_request_target:
+  pull_request:
+---
+# Should match when using `{}` object syntax
+# ruleid: dangerous-event-type
+on: { "push": null, "pull_request_target": null, "pull_request": null }
+---
+on:
+  # Should still match even if it's a multi-line list
+  # ruleid: dangerous-event-type
+  - pull_request_target
+---
+on:
+  - pull_request
+  # Should match even when it's surrounded
+  # ruleid: dangerous-event-type
+  - pull_request_target
+  - push
+---
+# ruleid: dangerous-event-type
+on: [pull_request_target]
+---
+# Should match even when it's surrounded
+# ruleid: dangerous-event-type
+on: [push, pull_request_target, pull_request]
+---
+# ok: dangerous-event-type
+on: [push, pull_request]

@@ -1,22 +1,6 @@
 name: Semgrep CI
 on:
   workflow_call:
-    secrets:
-      SARIF_TO_GH_COMMENT_APP_ID:
-        required: true
-        description: >
-          The ID of the GitHub application that exports SARIF results as pull request
-          annotations.
-      SARIF_TO_GH_COMMENT_APP_INSTALL_ID:
-        required: true
-        description: >
-          The repository or organization's installation ID of the GitHub application
-          exporting SARIF results as pull request annotations.
-      SARIF_TO_GH_COMMENT_APP_KEY:
-        required: true
-        description: >
-          The private key of the GitHub application exporting SARIF results
-          as pull request annotations.
     inputs:
       check_name:
         type: string
@@ -74,14 +58,16 @@ env:
   DEFAULT_EXCLUDE_RULE_IDS: |
     yaml.github-actions.security.run-shell-injection.run-shell-injection
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   scan:
-    if: (github.actor != 'dependabot[bot]')
     name: semgrep/ci
     runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+
     container:
       # Note: the non-root flavor doesn't work on GHA (e.g., 1.57.0-nonroot).
       image: returntocorp/semgrep:1.153.1@sha256:50b839b576d76426efd3e5cffda2db0d8c403f53aa76e91d42ccf51485ac336c
@@ -91,6 +77,9 @@ jobs:
       - if: ${{ !env.ACT }}
         name: Checkout Caller's Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Semgrep expects the head instead of the merge commit
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Clone the custom semgrep rules (this GitHub repository).
       - if: ${{ !env.ACT }}
@@ -131,6 +120,9 @@ jobs:
               # 'git add --force' from being silently ignored, thus forcing
               # the users to be explicit.
               "--no-git-ignore"
+              # Prevents Semgrep from scanning the repo 'saleor/semgrep-rules' as it
+              # can cause unrelated findings
+              "--exclude=./saleor-rules/"
           )
 
           # Add extra logging if the runner was run with debug logging.
@@ -158,51 +150,24 @@ jobs:
             cmd_args+=( "--exclude-rule=$excluded_rule_id" )
           done
 
+          echo "Running semgrep with: ${cmd_args[*]}"
           semgrep ci "${cmd_args[@]}"
 
-      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
+      - uses: saleor/sarif-to-annotations@feat/add-action
         name: Export SARIF Results
         # Always export the SARIF results file (if it exists) as semgrep
         # checks will fail on blocking errors, but we still want to display them
         # as PR annotations.
         if: ${{ always() }}
         with:
+          sarif-file: ${{ env.SARIF_OUTPUT_FILE }}
+
+      # Allow to download the results for local analysis
+      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
+        name: Export SARIF Results
+        if: ${{ always() }}
+        with:
           name: ${{ env.SARIF_ARTIFACT_NAME }}
           path: ${{ env.SARIF_OUTPUT_FILE }}
           if-no-files-found: error
           retention-days: 1
-
-  report:
-    if: always() && (github.actor != 'dependabot[bot]')
-    needs:
-      - scan
-    name: SARIF to PR Annotations
-    runs-on: ubuntu-24.04
-    container:
-      # Note: distroless flavor doesn't work on GHA.
-      image: ghcr.io/nyankiyoshi/less-advanced-security@sha256:689f73bed448ce40ca4ed01f6585f22665c0c302ed0e882d1fc78016c12f2880 # 0.5.0
-
-    steps:
-      - name: Download SARIF Results
-        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
-        with:
-          name: ${{ env.SARIF_ARTIFACT_NAME }}
-          path: results
-
-      - name: Export
-        env:
-          APP_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_ID }}
-          APP_INSTALL_ID: ${{ secrets.SARIF_TO_GH_COMMENT_APP_INSTALL_ID }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          APP_KEY: ${{ secrets.SARIF_TO_GH_COMMENT_APP_KEY }}
-          CHECK_NAME: ${{ inputs.check_name }}
-        run: |
-          less-advanced-security \
-            --app_id "$APP_ID" \
-            --install_id "$APP_INSTALL_ID" \
-            --sarif_path results/"$SARIF_OUTPUT_FILE" \
-            --repo "$GITHUB_REPOSITORY" \
-            --pr "$PR_NUMBER" \
-            --sha "$HEAD_SHA" \
-            --check_name "$CHECK_NAME"
