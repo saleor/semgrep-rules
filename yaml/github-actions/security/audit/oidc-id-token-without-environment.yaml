@@ -1,0 +1,61 @@
+rules:
+  - id: oidc-id-token-without-environment
+    message: |
+      This GitHub Workflow allows the job to request an OIDC ID token
+      (`id-token: write`) but does not define a GitHub Environment.
+
+      Without an environment, the issued OIDC token is not scoped to any
+      specific deployment workflow and thus can be requested by any workflow.
+      This token is trusted by external systems (e.g., cloud providers or
+      package registries), this increases the risk that a compromised workflow,
+      pull request workflow could perform unintended actions such as publishing
+      packages or accessing cloud resources.
+
+      GitHub Environments allow to enforce protection rules such as branch protection,
+      required reviewers and environment-specific secrets. When OIDC tokens are tied
+      to an environment, external identity providers can validate the environment in the
+      OIDC claims to ensure that only approved deployment jobs can obtain credentials.
+
+      To remediate this issue:
+      1. Add the `environment` key to the job requesting the OIDC token.
+      2. [IMPORTANT :warning:] Configure the external identity provider to only
+         trust tokens issued for that given environment.
+
+      References:
+      - https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments
+      - PyPI: https://docs.pypi.org/trusted-publishers/adding-a-publisher/#github-actions
+      - NPM: https://docs.npmjs.com/trusted-publishers#step-1-add-a-trusted-publisher-on-npmjscom
+    severity: ERROR
+    languages: [yaml]
+    metadata:
+      category: security
+      technology: github-actions
+      cwe: "CWE-862: Missing Authorization"
+      likelihood: MEDIUM
+      confidence: HIGH
+      impact: HIGH
+
+    patterns:
+      - pattern-inside: |
+          jobs:
+            ...
+      - pattern-inside: |
+          $JOB:
+            ...
+      - pattern: |
+          permissions:
+            ...
+            id-token: write
+            ...
+
+      # Exclude jobs that properly define an environment
+      - pattern-not-inside: |
+          ...
+          environment: ...
+          ...
+
+      # Exclude reusable workflows
+      - pattern-not-inside: |
+          ...
+          uses: ...
+          ...

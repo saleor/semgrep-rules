@@ -38,10 +38,12 @@ semgrep -c /path-to-the-clone-semgrep-rules .
 
 ### YAML
 
-| ID                                                                                                                                    | Impact | Confidence | Description                                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [yaml.github-actions.security.audit.shell-script-injection](yaml/github-actions/security/audit/shell-script-injection.yaml)           | HIGH   | HIGH       | Ensures no string interpolations (`${{ ... }}`) are present inside `run` blocks of GitHub Actions.                                  |
-| [yaml.github-actions.security.audit.secrets-without-environment](yaml/github-actions/security/audit/secrets-without-environment.yaml) | HIGH   | HIGH       | Matches GitHub Workflows that use secrets (other than GITHUB_TOKEN) without providing a GitHub Environment (`environment` keyword). |
+| ID                                                                                                                                                | Impact | Confidence | Description                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [yaml.github-actions.security.audit.shell-script-injection](yaml/github-actions/security/audit/shell-script-injection.yaml)                       | HIGH   | HIGH       | Ensures no string interpolations (`${{ ... }}`) are present inside `run` blocks of GitHub Actions.                                  |
+| [yaml.github-actions.security.audit.secrets-without-environment](yaml/github-actions/security/audit/secrets-without-environment.yaml)             | HIGH   | HIGH       | Matches GitHub Workflows that use secrets (other than GITHUB_TOKEN) without providing a GitHub Environment (`environment` keyword). |
+| [yaml.github-actions.security.audit.global-permissions-used](yaml/github-actions/security/audit/global-permissions-used.yaml)                     | HIGH   | HIGH       | Prevents workflows from settings global permissions.                                                                                |
+| [yaml.github-actions.security.audit.oidc-id-token-without-environment](yaml/github-actions/security/audit/oidc-id-token-without-environment.yaml) | HIGH   | HIGH       | Ensures a `environment` key is provided whenever using OIDC to external systems are verifying the workflow run is authorized.       |
 
 ## Contributing
 
