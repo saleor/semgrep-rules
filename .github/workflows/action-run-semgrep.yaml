@@ -159,7 +159,7 @@ jobs:
           echo "Running semgrep with: ${cmd_args[*]}"
           semgrep ci "${cmd_args[@]}"
 
-      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
         name: Export SARIF Results
         # Always export the SARIF results file (if it exists) as semgrep
         # checks will fail on blocking errors, but we still want to display them
