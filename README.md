@@ -1,10 +1,10 @@
-# Saleor Semgrep Rules
+# Saleor Opengrep Rules
 
-This repository contains Semgrep rules developed and made public by @Saleor.
+This repository contains Opengrep rules developed and made public by @Saleor.
 
 <!-- TOC -->
 
-- [Saleor Semgrep Rules](#saleor-semgrep-rules)
+- [Saleor Opengrep Rules](#saleor-opengrep-rules)
   - [Usage](#usage)
   - [Rules](#rules)
     - [Typescript](#typescript)
@@ -19,13 +19,13 @@ To be able to use the rules, the **git repository needs to be cloned**.
 Then a single rule can be run from the clone repository, for example:
 
 ```
-semgrep -c /path-to-the-clone-semgrep-rules/the-rule.yml .
+opengrep -c /path-to-the-cloned-rules/the-rule.yml .
 ```
 
 Alternatively, all rules can be run:
 
 ```
-semgrep -c /path-to-the-clone-semgrep-rules .
+opengrep -c /path-to-the-cloned-rules .
 ```
 
 ## Rules

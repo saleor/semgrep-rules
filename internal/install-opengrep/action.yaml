@@ -1,0 +1,39 @@
+name: "Install opengrep"
+description: "Installs Opengrep"
+
+outputs:
+  path:
+    description: The path where the executable was installed to.
+    value: ${{ steps.prepare.outputs.bin_path }}
+
+runs:
+  using: composite
+  steps:
+    - id: prepare
+      shell: bash
+      run: |
+        set -u
+
+        install_dir="$RUNNER_TEMP"/opengrep
+        bin_path="$install_dir"/opengrep
+
+        mkdir -m700 "$install_dir"
+
+        {
+          echo "install_dir=$install_dir"
+          echo "bin_path=$bin_path"
+        } >> "$GITHUB_OUTPUT"
+
+        # Add to PATH
+        echo "$install_dir" >> "$GITHUB_PATH"
+
+    # TODO: consider removing once GitHub runners are using Ubuntu 26.04
+    #       (instead use `apt-get`)
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+
+    - shell: bash
+      env:
+        INSTALL_DIR: ${{ steps.prepare.outputs.install_dir }}
+      run: |
+        bash "$GITHUB_ACTION_PATH"/download.sh "$INSTALL_DIR"

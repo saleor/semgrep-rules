@@ -7,3 +7,11 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 21 # 3 weeks
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      # 48h due to being highly trusted sources
+      default-days: 2

@@ -1,4 +1,4 @@
-name: Semgrep CI
+name: opengrep CI
 on:
   workflow_call:
     inputs:
@@ -6,7 +6,7 @@ on:
         required: false
         type: string
         description: |
-          Whitespace or newline separated semgrep YAML configuration paths or URLs, e.g.:
+          Whitespace or newline separated opengrep YAML configuration paths or URLs, e.g.:
           - auto
           - p/python (public library)
           - ./rules/my-rule.yaml (single YAML file)
@@ -36,9 +36,7 @@ on:
           excluded instead of also excluding the contents from `DEFAULT_EXCLUDE_RULE_IDS`.
 
 env:
-  SARIF_OUTPUT_FILE: semgrep-results.sarif
-  SARIF_ARTIFACT_NAME: Semgrep OSS SARIF Results
-  # The semgrep rules to run unless `inputs.use_default_config == false`.
+  # The opengrep rules to run unless `inputs.use_default_config == false`.
   DEFAULT_CONFIG: |
     auto
     p/ci
@@ -53,15 +51,11 @@ permissions: {}
 
 jobs:
   scan:
-    name: semgrep/ci
+    name: opengrep/ci
     runs-on: ubuntu-24.04
 
     permissions:
       contents: read
-
-    container:
-      # Note: the non-root flavor doesn't work on GHA (e.g., 1.57.0-nonroot).
-      image: returntocorp/semgrep:1.153.1@sha256:50b839b576d76426efd3e5cffda2db0d8c403f53aa76e91d42ccf51485ac336c
 
     steps:
       # Clone the invoker's repository.
@@ -69,12 +63,12 @@ jobs:
         name: Checkout Caller's Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Semgrep expects the head instead of the merge commit
+          # opengrep expects the head instead of the merge commit
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # Clone the custom semgrep rules (this GitHub repository).
+      # Clone the custom opengrep rules (this GitHub repository).
       - if: ${{ !env.ACT }}
-        name: Checkout Custom Semgrep Rules
+        name: Checkout Custom opengrep Rules
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           # Unfortunately we cannot detect the GitHub repository, and git ref of
@@ -90,7 +84,10 @@ jobs:
           path: ./saleor-rules
           set-safe-directory: false
 
-      - name: Run Semgrep Rules
+      - name: Install Opengrep
+        uses: saleor/semgrep-rules/internal/install-opengrep@feat/switch-opengrep
+
+      - name: Run opengrep Rules
         shell: bash
         env:
           TARGETS: ${{ inputs.targets }}
@@ -105,15 +102,16 @@ jobs:
               # Do not check for version update as we are inside a CI.
               "--disable-version-check"
               # Save the results into a SARIF file to add them as PR annotations.
-              "--output=$SARIF_OUTPUT_FILE"
+              "--output=opengrep-results.sarif"
               "--sarif"
-              # Disable .gitignore in favor of using .semgrepignore to prevent
+              # Disable .gitignore in favor of using .opengrepignore to prevent
               # 'git add --force' from being silently ignored, thus forcing
               # the users to be explicit.
               "--no-git-ignore"
-              # Prevents Semgrep from scanning the repo 'saleor/semgrep-rules' as it
+              # Prevents opengrep from scanning the repo 'saleor/semgrep-rules' as it
               # can cause unrelated findings
               "--exclude=./saleor-rules/"
+              "--taint-intrafile"
           )
 
           # Add extra logging if the runner was run with debug logging.
@@ -141,24 +139,24 @@ jobs:
             cmd_args+=( "--exclude-rule=$excluded_rule_id" )
           done
 
-          echo "Running semgrep with: ${cmd_args[*]}"
-          semgrep ci "${cmd_args[@]}"
+          echo "Running opengrep with: ${cmd_args[*]}"
+          opengrep ci "${cmd_args[@]}"
 
       - uses: saleor/sarif-to-annotations@feat/add-action
-        name: Export SARIF Results
-        # Always export the SARIF results file (if it exists) as semgrep
+        name: Annotate Results to PR
+        # Always export the SARIF results file (if it exists) as opengrep
         # checks will fail on blocking errors, but we still want to display them
         # as PR annotations.
         if: ${{ always() }}
         with:
-          sarif-file: ${{ env.SARIF_OUTPUT_FILE }}
+          sarif-file: opengrep-results.sarif
 
       # Allow to download the results for local analysis
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # 4.3.0
         name: Export SARIF Results
         if: ${{ always() }}
         with:
-          name: ${{ env.SARIF_ARTIFACT_NAME }}
-          path: ${{ env.SARIF_OUTPUT_FILE }}
+          name: opengrep OSS SARIF Results
+          path: opengrep-results.sarif
           if-no-files-found: error
           retention-days: 1
