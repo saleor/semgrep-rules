@@ -17,9 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+
+      - name: Install Opengrep
+        run: make build
+
       # Checks for syntax errors and runs 'p/semgrep-rule-lints'.
       - name: Validate Rules
-        shell: bash
         run: make validate
 
       - name: Test Rules
